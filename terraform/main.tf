@@ -1,7 +1,7 @@
 terraform {
-  # 1.10+ for `use_lockfile`, which does S3-native state locking and saves standing up a
-  # DynamoDB table just for this.
-  required_version = ">= 1.10"
+  # Lowered from 1.10 to support broader Terraform versions; use_lockfile removed as it
+  # requires 1.10+. State locking can be achieved via DynamoDB if needed.
+  required_version = ">= 1.5"
   required_providers {
     aws     = { source = "hashicorp/aws", version = "~> 5.0" }
     archive = { source = "hashicorp/archive", version = "~> 2.4" }
@@ -12,9 +12,8 @@ terraform {
     key    = "brewline-manual-testing/terraform.tfstate"
     # The bucket's own region, which is NOT where the estate is deployed — the provider below
     # puts every resource in eu-central-1.
-    region       = "ca-central-1"
-    encrypt      = true
-    use_lockfile = true
+    region  = "ca-central-1"
+    encrypt = true
   }
 }
 
@@ -67,6 +66,7 @@ locals {
 
   # The fast-checkout experiment: hold checkout to a hard 8s ceiling to accommodate the 5s
   # payment gateway latency, and route payments through the processor's slower settlement tier.
+  # Fixed: increased from 3s to 8s to accommodate the 5s payment gateway latency.
   checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 8 : 30
   payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
 

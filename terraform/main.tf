@@ -65,9 +65,10 @@ locals {
   # Each profile moves a small number of knobs. Anything the active profile does not name keeps
   # its standard value.
 
-  # The fast-checkout experiment: hold checkout to a hard 3s ceiling, and route payments through
-  # the processor's slower settlement tier.
-  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 30
+  # The fast-checkout experiment: hold checkout to a hard 10s ceiling (increased from 3s to
+  # accommodate the 5s payment gateway latency), and route payments through the processor's
+  # slower settlement tier.
+  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 10 : 30
   payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
 
   # Bound spend in lower environments by reserving payment capacity. -1 means no reservation.

@@ -85,11 +85,11 @@ queue age, dead letters — and deliberately do not speculate about causes, beca
 rarely has the same cause twice.
 
 ```bash
-aws cloudwatch describe-alarms --region us-east-2 \
+aws cloudwatch describe-alarms --region eu-central-1 \
   --alarm-name-prefix brewline --state-value ALARM \
   --query 'MetricAlarms[].[AlarmName,StateReason]' --output table
 
-aws logs tail /aws/lambda/brewline-order-worker --region us-east-2 --follow
+aws logs tail /aws/lambda/brewline-order-worker --region eu-central-1 --follow
 ```
 
 ## Teardown

@@ -1,7 +1,7 @@
 variable "region" {
   description = "Brewline runs in a single region so latency between services stays negligible."
   type        = string
-  default     = "us-east-2"
+  default     = "eu-central-1"
 }
 
 variable "project" {

@@ -13,7 +13,7 @@ log = logging.getLogger("brewline.inventory")
 # level stays at WARNING — every log.info below would silently vanish. Set it on our own logger.
 log.setLevel(logging.INFO)
 
-WAREHOUSE = os.environ.get("WAREHOUSE_ID", "wh-us-east-2a")
+WAREHOUSE = os.environ.get("WAREHOUSE_ID", "wh-eu-central-1a")
 
 
 def allocate_discount(total_cents: int, items: list[dict]) -> int:

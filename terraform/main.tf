@@ -11,7 +11,7 @@ terraform {
     bucket = "devops-project-terraform-remote-backend"
     key    = "brewline-manual-testing/terraform.tfstate"
     # The bucket's own region, which is NOT where the estate is deployed — the provider below
-    # puts every resource in us-east-2.
+    # puts every resource in eu-central-1.
     region       = "ca-central-1"
     encrypt      = true
     use_lockfile = true

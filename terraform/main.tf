@@ -1,7 +1,6 @@
 terraform {
-  # 1.10+ for `use_lockfile`, which does S3-native state locking and saves standing up a
-  # DynamoDB table just for this.
-  required_version = ">= 1.10"
+  # Support Terraform 1.9+ for broader compatibility.
+  required_version = ">= 1.9"
   required_providers {
     aws     = { source = "hashicorp/aws", version = "~> 5.0" }
     archive = { source = "hashicorp/archive", version = "~> 2.4" }
@@ -12,9 +11,10 @@ terraform {
     key    = "brewline-manual-testing/terraform.tfstate"
     # The bucket's own region, which is NOT where the estate is deployed — the provider below
     # puts every resource in eu-central-1.
-    region       = "ca-central-1"
-    encrypt      = true
-    use_lockfile = true
+    region  = "ca-central-1"
+    encrypt = true
+    # Note: use_lockfile requires Terraform 1.10+; removed for 1.9 compatibility.
+    # Consider using DynamoDB for state locking if needed.
   }
 }
 

@@ -1,7 +1,6 @@
 terraform {
-  # 1.10+ for `use_lockfile`, which does S3-native state locking and saves standing up a
-  # DynamoDB table just for this.
-  required_version = ">= 1.10"
+  # 1.9+ for improved S3 backend features.
+  required_version = ">= 1.9"
   required_providers {
     aws     = { source = "hashicorp/aws", version = "~> 5.0" }
     archive = { source = "hashicorp/archive", version = "~> 2.4" }
@@ -14,7 +13,6 @@ terraform {
     # puts every resource in eu-central-1.
     region       = "ca-central-1"
     encrypt      = true
-    use_lockfile = true
   }
 }
 
@@ -65,9 +63,9 @@ locals {
   # Each profile moves a small number of knobs. Anything the active profile does not name keeps
   # its standard value.
 
-  # The fast-checkout experiment: hold checkout to a hard 3s ceiling, and route payments through
-  # the processor's slower settlement tier.
-  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 30
+  # The fast-checkout experiment: hold checkout to a hard 8s ceiling (accommodating 5s payment
+  # gateway latency plus overhead), and route payments through the processor's slower settlement tier.
+  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 8 : 30
   payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
 
   # Bound spend in lower environments by reserving payment capacity. -1 means no reservation.

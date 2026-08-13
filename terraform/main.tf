@@ -1,7 +1,6 @@
 terraform {
-  # 1.10+ for `use_lockfile`, which does S3-native state locking and saves standing up a
-  # DynamoDB table just for this.
-  required_version = ">= 1.10"
+  # 1.5+ for S3 backend with native state locking support.
+  required_version = ">= 1.5"
   required_providers {
     aws     = { source = "hashicorp/aws", version = "~> 5.0" }
     archive = { source = "hashicorp/archive", version = "~> 2.4" }

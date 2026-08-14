@@ -67,7 +67,7 @@ locals {
 
   # The fast-checkout experiment: hold checkout to a hard 3s ceiling, and route payments through
   # the processor's slower settlement tier.
-  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 30
+  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 60
   payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
 
   # Bound spend in lower environments by reserving payment capacity. -1 means no reservation.

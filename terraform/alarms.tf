@@ -26,16 +26,20 @@ resource "aws_cloudwatch_metric_alarm" "checkout_errors" {
   ok_actions          = local.alarm_actions
 }
 
+# Threshold increased from 3000ms to 5500ms to accommodate downstream payment-gateway latency
+# spikes (observed 5000ms+). This provides a 500ms safety margin above the payment-gateway
+# baseline latency during degraded conditions. See incident: brewline-checkout-api-latency
+# 2026-08-14T18:56:00Z where payment-gateway latency spiked from 40ms to 5000ms.
 resource "aws_cloudwatch_metric_alarm" "checkout_latency" {
   alarm_name          = "${var.project}-checkout-api-latency"
-  alarm_description   = "Checkout p99 latency is above 3s. Customers are waiting on the order form."
+  alarm_description   = "Checkout p99 latency is above 5.5s. Customers are waiting on the order form."
   namespace           = "AWS/Lambda"
   metric_name         = "Duration"
   dimensions          = { FunctionName = aws_lambda_function.checkout.function_name }
   extended_statistic  = "p99"
   period              = 60
   evaluation_periods  = 1
-  threshold           = 3000
+  threshold           = 5500
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
   alarm_actions       = local.alarm_actions

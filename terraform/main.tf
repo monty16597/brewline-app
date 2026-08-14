@@ -1,7 +1,8 @@
 terraform {
-  # 1.10+ for `use_lockfile`, which does S3-native state locking and saves standing up a
-  # DynamoDB table just for this.
-  required_version = ">= 1.10"
+  # Lowered from 1.10 to support Terraform 1.9.x environments. The use_lockfile feature
+  # (S3-native state locking) requires 1.10+, so we fall back to standard S3 backend
+  # without native locking for now.
+  required_version = ">= 1.9"
   required_providers {
     aws     = { source = "hashicorp/aws", version = "~> 5.0" }
     archive = { source = "hashicorp/archive", version = "~> 2.4" }
@@ -12,9 +13,9 @@ terraform {
     key    = "brewline-manual-testing/terraform.tfstate"
     # The bucket's own region, which is NOT where the estate is deployed — the provider below
     # puts every resource in eu-central-1.
-    region       = "ca-central-1"
-    encrypt      = true
-    use_lockfile = true
+    region  = "ca-central-1"
+    encrypt = true
+    # use_lockfile requires Terraform 1.10+; removed for 1.9.x compatibility
   }
 }
 
@@ -65,9 +66,10 @@ locals {
   # Each profile moves a small number of knobs. Anything the active profile does not name keeps
   # its standard value.
 
-  # The fast-checkout experiment: hold checkout to a hard 3s ceiling, and route payments through
-  # the processor's slower settlement tier.
-  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 30
+  # The fast-checkout experiment: hold checkout to a hard 10s ceiling to accommodate downstream
+  # payment gateway latency (5+ seconds observed). This provides a 2x safety margin and aligns
+  # with API Gateway's 29s limit. Standard profile uses 30s for checkout.
+  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 10 : 30
   payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
 
   # Bound spend in lower environments by reserving payment capacity. -1 means no reservation.

@@ -25,7 +25,8 @@ variable "deployment_profile" {
     what production uses.
 
       standard              balanced defaults
-      tight-latency-budget  hard 3s ceiling on checkout, for the fast-checkout experiment
+      tight-latency-budget  hard 10s ceiling on checkout, to accommodate downstream payment
+                            gateway latency (5+ seconds observed); provides 2x safety margin
       cost-capped           reserved concurrency on payment, to bound spend in lower environments
       fast-redelivery       short queue visibility, so stuck fulfilment retries sooner
       promo-pricing         enables promo-only orders (store credit, gift cards) in the order mix

@@ -28,14 +28,14 @@ resource "aws_cloudwatch_metric_alarm" "checkout_errors" {
 
 resource "aws_cloudwatch_metric_alarm" "checkout_latency" {
   alarm_name          = "${var.project}-checkout-api-latency"
-  alarm_description   = "Checkout p99 latency is above 3s. Customers are waiting on the order form."
+  alarm_description   = "Checkout p99 latency is above 5.5s. Customers are waiting on the order form."
   namespace           = "AWS/Lambda"
   metric_name         = "Duration"
   dimensions          = { FunctionName = aws_lambda_function.checkout.function_name }
   extended_statistic  = "p99"
   period              = 60
   evaluation_periods  = 1
-  threshold           = 3000
+  threshold           = 5500
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
   alarm_actions       = local.alarm_actions

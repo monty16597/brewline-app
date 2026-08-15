@@ -64,6 +64,23 @@ resource "aws_cloudwatch_metric_alarm" "api_5xx" {
   ok_actions          = local.alarm_actions
 }
 
+# ── payment gateway throttling: early warning before cascading to 5xx errors ──────────────────
+resource "aws_cloudwatch_metric_alarm" "payment_gateway_throttles" {
+  alarm_name          = "${var.project}-payment-gateway-throttles"
+  alarm_description   = "Payment gateway Lambda is being throttled. Checkout may receive TooManyRequestsException errors."
+  namespace           = "AWS/Lambda"
+  metric_name         = "Throttles"
+  dimensions          = { FunctionName = aws_lambda_function.payment.function_name }
+  statistic           = "Sum"
+  period              = 60
+  evaluation_periods  = 1
+  threshold           = 5
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = local.alarm_actions
+  ok_actions          = local.alarm_actions
+}
+
 # ── the symptom for anything that goes wrong after the customer has been told "yes" ────────────
 resource "aws_cloudwatch_metric_alarm" "worker_errors" {
   alarm_name          = "${var.project}-order-worker-errors"

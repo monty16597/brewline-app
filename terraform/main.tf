@@ -70,8 +70,12 @@ locals {
   checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 30
   payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
 
-  # Bound spend in lower environments by reserving payment capacity. -1 means no reservation.
-  payment_reserved_concurrency = var.deployment_profile == "cost-capped" ? 1 : -1
+  # Reserve payment capacity to prevent throttling. The payment gateway handles synchronous
+  # invocations from checkout; insufficient concurrency causes TooManyRequestsException errors
+  # that cascade to 5xx responses. Standard and production-like profiles get 100 concurrent
+  # executions (6x headroom for peak load spikes). Cost-capped profile reserves minimal capacity
+  # for testing. -1 means no reservation (unlimited).
+  payment_reserved_concurrency = var.deployment_profile == "cost-capped" ? 1 : (var.deployment_profile == "standard" ? 100 : -1)
 
   # Retry stuck fulfilment sooner, and exercise the slower fulfilment path while doing it.
   worker_timeout           = 60

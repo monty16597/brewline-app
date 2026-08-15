@@ -27,15 +27,21 @@ resource "aws_cloudwatch_metric_alarm" "checkout_errors" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "checkout_latency" {
-  alarm_name          = "${var.project}-checkout-api-latency"
-  alarm_description   = "Checkout p99 latency is above 3s. Customers are waiting on the order form."
-  namespace           = "AWS/Lambda"
-  metric_name         = "Duration"
-  dimensions          = { FunctionName = aws_lambda_function.checkout.function_name }
-  extended_statistic  = "p99"
-  period              = 60
-  evaluation_periods  = 1
-  threshold           = 3000
+  alarm_name        = "${var.project}-checkout-api-latency"
+  alarm_description = "Checkout p99 latency is above 2.5s. Customers are waiting on the order form."
+  namespace         = "AWS/Lambda"
+  metric_name       = "Duration"
+  dimensions        = { FunctionName = aws_lambda_function.checkout.function_name }
+  extended_statistic = "p99"
+  period             = 60
+  evaluation_periods = 1
+
+  # Deliberately BELOW the shortest checkout timeout any profile sets (3s), not equal to it.
+  # A Lambda that times out reports Duration capped at exactly its timeout — measured p99 came
+  # back as 2999.98ms against a 3s budget — so a threshold of 3000 with GreaterThanThreshold can
+  # never be crossed by the very failure it exists to catch. The SLO is a fixed customer-latency
+  # promise; it has to sit under the timeout to be observable at all.
+  threshold = 2500
   comparison_operator = "GreaterThanThreshold"
   treat_missing_data  = "notBreaching"
   alarm_actions       = local.alarm_actions

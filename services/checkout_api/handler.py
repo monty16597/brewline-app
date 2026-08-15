@@ -16,6 +16,7 @@ import time
 import uuid
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 log = logging.getLogger("brewline.checkout")
@@ -23,7 +24,12 @@ log = logging.getLogger("brewline.checkout")
 # level stays at WARNING — every log.info below would silently vanish. Set it on our own logger.
 log.setLevel(logging.INFO)
 
-lambda_client = boto3.client("lambda")
+# One attempt, no retries. botocore's default retry policy treats a throttled invoke as a
+# transient error and retries it with backoff — which converts a capacity problem into a latency
+# problem, hides it from the TooManyRequestsException branch below, and spends the waiting
+# customer's time doing it. The customer is blocked on this call: if payment has no capacity right
+# now, saying so immediately is the correct answer, not queueing behind a cap that is not moving.
+lambda_client = boto3.client("lambda", config=Config(retries={"max_attempts": 1, "mode": "standard"}))
 sqs = boto3.client("sqs")
 
 PAYMENT_FUNCTION = os.environ["PAYMENT_FUNCTION"]

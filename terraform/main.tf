@@ -65,9 +65,11 @@ locals {
   # Each profile moves a small number of knobs. Anything the active profile does not name keeps
   # its standard value.
 
-  # The fast-checkout experiment: hold checkout to a hard 3s ceiling, and route payments through
-  # the processor's slower settlement tier.
-  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 30
+  # The fast-checkout experiment: hold checkout to a hard 10s ceiling to accommodate
+  # brewline-payment-gateway latency (~85ms) plus network jitter and concurrent load spikes.
+  # Incident 2026-08-15 21:07 UTC: 3s timeout was insufficient, causing Lambda timeouts and
+  # API Gateway 5xx errors. Increased to 10s to provide adequate buffer.
+  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 10 : 30
   payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
 
   # Bound spend in lower environments by reserving payment capacity. -1 means no reservation.

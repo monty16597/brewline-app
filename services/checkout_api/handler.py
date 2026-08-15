@@ -38,7 +38,12 @@ ORDERS_QUEUE_URL = os.environ["ORDERS_QUEUE_URL"]
 
 def _authorise(order: dict, correlation_id: str) -> dict:
     """Ask the payment gateway to authorise. Synchronous on purpose — we will not enqueue an
-    order we could not charge for."""
+    order we could not charge for.
+    
+    Lambda timeout is set to 10s to accommodate brewline-payment-gateway latency (~85ms) plus
+    network jitter and concurrent load spikes. Incident 2026-08-15 21:07 UTC: 3s timeout was
+    insufficient, causing Lambda timeouts and API Gateway 5xx errors.
+    """
     log.info("correlation_id=%s calling downstream=%s action=authorise amount_cents=%s",
              correlation_id, PAYMENT_FUNCTION, order.get("total_cents"))
     started = time.monotonic()

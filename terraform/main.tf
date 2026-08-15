@@ -66,8 +66,9 @@ locals {
   # its standard value.
 
   # The fast-checkout experiment: hold checkout to a hard 3s ceiling, and route payments through
-  # the processor's slower settlement tier.
-  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 30
+  # the processor's slower settlement tier. NOTE: Increased from 3s to 10s to accommodate
+  # downstream payment gateway latency spikes (p99: 5s). See incident brewline-checkout-api-errors.
+  checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 10 : 30
   payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
 
   # Bound spend in lower environments by reserving payment capacity. -1 means no reservation.

@@ -19,13 +19,61 @@ log.setLevel(logging.INFO)
 # Observed round-trip to the card processor for this environment's settlement tier.
 DELAY_MS = int(os.environ.get("PAYMENT_DELAY_MS", "40"))
 
+# HTTP timeout for external payment processor API calls (in seconds).
+# Set to 2 seconds to fail fast and prevent cascading timeouts to checkout-api.
+HTTP_TIMEOUT_SECONDS = 2.0
+
+# Payment processor endpoint (optional; if not set, uses simulated delay).
+PAYMENT_PROCESSOR_URL = os.environ.get("PAYMENT_PROCESSOR_URL")
+
 
 def authorise(total_cents: int, correlation_id: str) -> dict:
     log.info("correlation_id=%s authorising amount_cents=%s upstream_latency_ms=%s",
              correlation_id, total_cents, DELAY_MS)
 
     # The call out to the card processor.
-    time.sleep(DELAY_MS / 1000.0)
+    if PAYMENT_PROCESSOR_URL:
+        # Real HTTP call with timeout to prevent hanging.
+        import requests
+        from requests.exceptions import Timeout, ConnectionError
+        
+        try:
+            started = time.monotonic()
+            response = requests.post(
+                PAYMENT_PROCESSOR_URL,
+                json={
+                    "amount_cents": total_cents,
+                    "correlation_id": correlation_id,
+                },
+                timeout=HTTP_TIMEOUT_SECONDS,
+            )
+            elapsed_ms = int((time.monotonic() - started) * 1000)
+            response.raise_for_status()
+            
+            log.info("correlation_id=%s processor call succeeded in %sms",
+                     correlation_id, elapsed_ms)
+            
+            return {
+                "authorised": True,
+                "auth_code": f"AUTH-{abs(hash(correlation_id)) % 1_000_000:06d}",
+                "amount_cents": total_cents,
+                "processor_latency_ms": elapsed_ms,
+            }
+        except Timeout:
+            log.error("correlation_id=%s payment processor timeout after %s seconds",
+                      correlation_id, HTTP_TIMEOUT_SECONDS)
+            raise RuntimeError(f"Payment service timeout - please retry")
+        except ConnectionError as e:
+            log.error("correlation_id=%s payment processor connection error: %s",
+                      correlation_id, str(e))
+            raise RuntimeError(f"Payment service temporarily unavailable - please retry")
+        except requests.exceptions.RequestException as e:
+            log.error("correlation_id=%s payment processor error: %s",
+                      correlation_id, str(e))
+            raise RuntimeError(f"Payment service error - please retry")
+    else:
+        # Simulated delay (for testing/development).
+        time.sleep(DELAY_MS / 1000.0)
 
     return {
         "authorised": True,

@@ -3,7 +3,7 @@ name = "brewline"
 version = "0.1.0"
 description = "Brewline order and fulfilment platform."
 requires-python = ">=3.11"
-dependencies = ["boto3>=1.34"]
+dependencies = ["boto3>=1.34", "requests>=2.31"]
 
 [dependency-groups]
 dev = ["pytest>=8.0"]
@@ -11,3 +11,6 @@ dev = ["pytest>=8.0"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["services*"]

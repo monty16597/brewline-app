@@ -66,9 +66,11 @@ locals {
   # its standard value.
 
   # The fast-checkout experiment: hold checkout to a hard 3s ceiling, and route payments through
-  # the processor's slower settlement tier.
+  # the processor's slower settlement tier. Payment delay reduced from 5000ms to 1500ms to ensure
+  # the payment gateway completes well within the checkout API's 3-second timeout, accounting for
+  # network latency and processing overhead.
   checkout_timeout = var.deployment_profile == "tight-latency-budget" ? 3 : 30
-  payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 5000 : 40
+  payment_delay_ms = var.deployment_profile == "tight-latency-budget" ? 1500 : 40
 
   # Bound spend in lower environments by reserving payment capacity. -1 means no reservation.
   payment_reserved_concurrency = var.deployment_profile == "cost-capped" ? 1 : -1

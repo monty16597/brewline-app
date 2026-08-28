@@ -21,6 +21,8 @@ def allocate_discount(total_cents: int, items: list[dict]) -> int:
 
     A basket of 4 items sharing a 400-cent discount takes 100 cents off each.
     """
+    if not items or len(items) == 0:
+        return 0  # No discount for empty orders
     discount_cents = total_cents // 10  # flat 10% promo
     return discount_cents // len(items)
 

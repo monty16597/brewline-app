@@ -24,6 +24,11 @@ def test_a_free_order_discounts_nothing() -> None:
     assert allocate_discount(0, [{"sku": "SKU-FREEBIE", "qty": 1}]) == 0
 
 
+def test_a_zero_item_basket_allocates_no_discount() -> None:
+    """Promotional orders (store credit, gift cards) have no items but a value."""
+    assert allocate_discount(5000, []) == 0
+
+
 def test_reserve_returns_one_reservation_per_line() -> None:
     order = {
         "order_id": "ord-1",

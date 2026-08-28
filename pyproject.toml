@@ -1,9 +1,16 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "brewline"
 version = "0.1.0"
 description = "Brewline order and fulfilment platform."
 requires-python = ">=3.11"
 dependencies = ["boto3>=1.34"]
+
+[tool.setuptools]
+packages = ["services"]
 
 [dependency-groups]
 dev = ["pytest>=8.0"]

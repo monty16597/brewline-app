@@ -74,7 +74,7 @@ locals {
   payment_reserved_concurrency = var.deployment_profile == "cost-capped" ? 1 : -1
 
   # Retry stuck fulfilment sooner, and exercise the slower fulfilment path while doing it.
-  worker_timeout           = 60
+  worker_timeout           = 180
   queue_visibility_timeout = var.deployment_profile == "fast-redelivery" ? 10 : 360
   worker_processing_ms     = var.deployment_profile == "fast-redelivery" ? 25000 : 200
 

@@ -26,28 +26,51 @@ INVENTORY_FUNCTION = os.environ["INVENTORY_FUNCTION"]
 NOTIFICATIONS_TOPIC = os.environ["NOTIFICATIONS_TOPIC"]
 PROCESSING_MS = int(os.environ.get("PROCESSING_MS", "200"))
 
+# Retry configuration for transient failures
+MAX_RETRIES = 3
+RETRY_BACKOFF_SECONDS = [1, 2, 4]  # Exponential backoff: 1s, 2s, 4s
+
 
 def _reserve_stock(order: dict, correlation_id: str) -> dict:
-    log.info("correlation_id=%s calling downstream=%s action=reserve",
-             correlation_id, INVENTORY_FUNCTION)
-    response = lambda_client.invoke(
-        FunctionName=INVENTORY_FUNCTION,
-        InvocationType="RequestResponse",
-        Payload=json.dumps({"order": order, "correlation_id": correlation_id}).encode(),
-    )
-    payload = json.loads(response["Payload"].read() or b"{}")
+    """Reserve stock with exponential backoff retry logic for transient failures."""
+    last_error = None
+    
+    for attempt in range(MAX_RETRIES):
+        try:
+            log.info("correlation_id=%s calling downstream=%s action=reserve attempt=%d",
+                     correlation_id, INVENTORY_FUNCTION, attempt + 1)
+            response = lambda_client.invoke(
+                FunctionName=INVENTORY_FUNCTION,
+                InvocationType="RequestResponse",
+                Payload=json.dumps({"order": order, "correlation_id": correlation_id}).encode(),
+            )
+            payload = json.loads(response["Payload"].read() or b"{}")
 
-    if response.get("FunctionError"):
-        # Relay the callee's own error text. Swallowing it here would turn a specific failure
-        # into an unhelpful "the worker is failing".
-        log.error("correlation_id=%s downstream=%s raised %s: %s",
-                  correlation_id, INVENTORY_FUNCTION,
-                  payload.get("errorType"), payload.get("errorMessage"))
-        raise RuntimeError(
-            f"{INVENTORY_FUNCTION} failed: {payload.get('errorType')}: "
-            f"{payload.get('errorMessage')}"
-        )
-    return payload
+            if response.get("FunctionError"):
+                # Relay the callee's own error text. Swallowing it here would turn a specific failure
+                # into an unhelpful "the worker is failing".
+                log.error("correlation_id=%s downstream=%s raised %s: %s",
+                          correlation_id, INVENTORY_FUNCTION,
+                          payload.get("errorType"), payload.get("errorMessage"))
+                raise RuntimeError(
+                    f"{INVENTORY_FUNCTION} failed: {payload.get('errorType')}: "
+                    f"{payload.get('errorMessage')}"
+                )
+            return payload
+        except (TimeoutError, ClientError) as exc:
+            last_error = exc
+            if attempt < MAX_RETRIES - 1:
+                backoff_seconds = RETRY_BACKOFF_SECONDS[attempt]
+                log.warning("correlation_id=%s downstream=%s transient failure attempt=%d: %s "
+                            "retrying in %ds",
+                            correlation_id, INVENTORY_FUNCTION, attempt + 1, exc, backoff_seconds)
+                time.sleep(backoff_seconds)
+            else:
+                log.error("correlation_id=%s downstream=%s failed after %d attempts: %s",
+                          correlation_id, INVENTORY_FUNCTION, MAX_RETRIES, exc)
+    
+    # All retries exhausted
+    raise last_error or RuntimeError(f"Failed to reserve stock after {MAX_RETRIES} attempts")
 
 
 def _notify(order: dict, correlation_id: str) -> None:
